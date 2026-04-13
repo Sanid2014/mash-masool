@@ -4562,10 +4562,11 @@ export default function App() {
 
         // admin-panel sections this user can access
         const adminSections = [
-          { key: "performers",   icon: "🏆", ar: "المتميزون",  en: "Performers",    check: modCan("performers","add")||modCan("performers","edit")||modCan("performers","delete") },
-          { key: "votes",        icon: "⬡",  ar: "التصويتات",  en: "Votes",         check: modCan("votes","add")||modCan("votes","edit")||modCan("votes","delete") },
-          { key: "announcements",icon: "📣", ar: "الإعلانات",  en: "Announcements", check: modCan("announcements","add")||modCan("announcements","delete")||modCan("broadcast","send") },
-          { key: "users",        icon: "👥", ar: "المستخدمون", en: "Users",         check: modCan("users","view") },
+          { key: "performers",   icon: "🏆", ar: "المتميزون",     en: "Performers",    check: modCan("performers","add")||modCan("performers","edit")||modCan("performers","delete") },
+          { key: "votes",        icon: "⬡",  ar: "التصويتات",     en: "Votes",         check: modCan("votes","add")||modCan("votes","edit")||modCan("votes","delete") },
+          { key: "announcements",icon: "📣", ar: "الإعلانات",     en: "Announcements", check: modCan("announcements","add")||modCan("announcements","delete")||modCan("broadcast","send") },
+          { key: "naif",         icon: "🌙", ar: "مذكرات نفنف",   en: "Naif Diary",    check: modCan("naifDiary","add")||modCan("naifDiary","edit")||modCan("naifDiary","delete") },
+          { key: "users",        icon: "👥", ar: "المستخدمون",    en: "Users",         check: modCan("users","view")||modCan("users","approve") },
         ].filter(s => s.check);
         const hasAdminAccess = adminSections.length > 0;
 
@@ -4588,7 +4589,7 @@ export default function App() {
             onClick={() => closeWithAnim(setClosingProfile, setShowMobileProfile)}
           >
             <div
-              style={{ background: theme.card, borderRadius: "22px 22px 0 0", border: `1px solid ${theme.border}`, maxHeight: "92vh", display: "flex", flexDirection: "column", animation: closingProfile ? "sheetDown 0.32s cubic-bezier(0.4,0,1,1) forwards" : "sheetUp 0.35s cubic-bezier(0,0,0.2,1) forwards", paddingBottom:"calc(72px + env(safe-area-inset-bottom,0px))" }}
+              style={{ background: theme.card, borderRadius: "22px 22px 0 0", border: `1px solid ${theme.border}`, maxHeight: "92vh", display: "flex", flexDirection: "column", animation: closingProfile ? "sheetDown 0.32s cubic-bezier(0.4,0,1,1) forwards" : "sheetUp 0.35s cubic-bezier(0,0,0.2,1) forwards" }}
               onClick={e => e.stopPropagation()}
             >
               {/* drag handle */}
