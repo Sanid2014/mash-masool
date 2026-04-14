@@ -579,56 +579,67 @@ export default function FoodWheel({ onBack, currentUser, onCoinsChange, users })
 
       {/* Result Overlay */}
       <AnimatePresence>
-        {gameState === 'RESULT' && totalBet > 0 && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="fixed inset-0 z-[150] flex items-end justify-center pb-12 sm:pb-20 px-6 bg-black/60 backdrop-blur-sm">
-            <motion.div initial={{ y:300, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:300, opacity:0 }} transition={{ type:"spring", damping:25, stiffness:200 }}
-              className={`w-full max-w-md rounded-[40px] p-8 border shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden ${lastWin > 0 ? 'bg-[#13182A] border-yellow-500/20' : 'bg-[#1A1216] border-red-500/15'}`}>
-              <div className={`absolute inset-0 bg-gradient-to-b pointer-events-none ${lastWin > 0 ? 'from-yellow-500/10 via-purple-500/5 to-transparent' : 'from-red-600/10 to-transparent'}`} />
-              <div className="relative z-10 flex flex-col items-center">
-                <motion.div initial={{ scale:0, rotate:-20 }} animate={{ scale:1, rotate:0 }} transition={{ delay:0.2, type:"spring" }}
-                  className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-2xl">
-                  <img src={winner ? resolveIcon(winner) : ''} className="w-16 h-16 object-contain drop-shadow-lg" alt="" />
-                </motion.div>
-                <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:0.3 }} className="flex flex-col items-center gap-1 mb-6">
-                  {lastWin > 0 ? (
-                    <div className="flex items-center gap-2 text-4xl font-black text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.5)]">
-                      <Coins className="w-8 h-8" />+{lastWin.toLocaleString()}
+        {gameState === 'RESULT' && (() => {
+          const winnerItem = winner && typeof winner === 'object' ? winner : null;
+          const winnerLabel = winnerItem
+            ? (t.items[winnerItem.id] || winnerItem.name)
+            : winner === 'PIZZA' ? t.pizzaBonus : winner === 'SALAD' ? t.saladBonus : '';
+          const winnerMultiplier = winnerItem ? `x${winnerItem.multiplier}` : '';
+          return (
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="fixed inset-0 z-[150] flex items-end justify-center pb-12 sm:pb-20 px-6 bg-black/60 backdrop-blur-sm">
+              <motion.div initial={{ y:300, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:300, opacity:0 }} transition={{ type:"spring", damping:25, stiffness:200 }}
+                className={`w-full max-w-md rounded-[40px] p-8 border shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden ${lastWin > 0 ? 'bg-[#13182A] border-yellow-500/20' : 'bg-[#1A1C2C] border-white/10'}`}>
+                <div className={`absolute inset-0 bg-gradient-to-b pointer-events-none ${lastWin > 0 ? 'from-yellow-500/10 via-purple-500/5 to-transparent' : 'from-white/5 to-transparent'}`} />
+                <div className="relative z-10 flex flex-col items-center">
+                  {/* Winning item icon */}
+                  <motion.div initial={{ scale:0, rotate:-20 }} animate={{ scale:1, rotate:0 }} transition={{ delay:0.2, type:"spring" }}
+                    className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 shadow-2xl">
+                    <img src={winner ? resolveIcon(winner) : ''} className="w-16 h-16 object-contain drop-shadow-lg" alt="" />
+                  </motion.div>
+                  {/* Item name + multiplier */}
+                  <motion.div initial={{ y:10, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:0.25 }} className="flex flex-col items-center gap-0.5 mb-5">
+                    <span className="text-lg font-black text-white">{winnerLabel}</span>
+                    {winnerMultiplier && <span className="text-sm font-black text-yellow-400/80">{winnerMultiplier}</span>}
+                  </motion.div>
+                  {/* Bet & Win stats */}
+                  <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:0.35 }} className="w-full grid grid-cols-2 gap-3 mb-5">
+                    <div className="bg-white/5 rounded-2xl p-4 flex flex-col items-center border border-white/5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{lang === 'AR' ? 'الرهان' : 'Bet'}</span>
+                      <span className="text-xl font-black text-white">{totalBet.toLocaleString()}</span>
                     </div>
-                  ) : (
-                    <div className="text-3xl font-black text-red-400">{lang === 'AR' ? 'حظاً أوفر!' : 'Better luck next time!'}</div>
-                  )}
-                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500">{t.payout}</div>
-                </motion.div>
-                <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:0.4 }} className="w-full bg-white/5 rounded-2xl p-4 flex justify-between items-center border border-white/5" style={{ marginBottom: topWinners.length ? 24 : 0 }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t.totalStaked}</span>
-                  <span className="text-lg font-black text-white">{totalBet.toLocaleString()}</span>
-                </motion.div>
-                <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:0.5 }} className="w-full space-y-3 mt-6">
-                  {topWinners.length > 0 ? (
-                    <>
-                      <div className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-gray-600 mb-3">🏆 فوز الجولة</div>
-                      {topWinners.map((w, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-white/5 rounded-xl px-5 py-3 border border-white/5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-yellow-400 text-black flex items-center justify-center text-[10px] font-black">1</div>
-                            <span className="text-sm font-bold text-gray-200">{w.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-sm font-black text-yellow-400/80">
-                            <Coins className="w-3.5 h-3.5" />{w.win.toLocaleString()}
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="text-center py-3 text-sm font-black text-gray-500">
-                      {lang === 'AR' ? 'لا يوجد رابحين في هذه الجولة' : 'No winners this round'}
+                    <div className="bg-white/5 rounded-2xl p-4 flex flex-col items-center border border-white/5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{lang === 'AR' ? 'الربح' : 'Win'}</span>
+                      <span className={`text-xl font-black ${lastWin > 0 ? 'text-yellow-400' : 'text-white'}`}>{lastWin.toLocaleString()}</span>
                     </div>
-                  )}
-                </motion.div>
-              </div>
+                  </motion.div>
+                  {/* Winners / No winners */}
+                  <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:0.5 }} className="w-full space-y-3">
+                    {topWinners.length > 0 ? (
+                      <>
+                        <div className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-gray-600 mb-3">🏆 {lang === 'AR' ? 'رابحو الجولة' : 'Round Winners'}</div>
+                        {topWinners.map((w, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-white/5 rounded-xl px-5 py-3 border border-white/5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full bg-yellow-400 text-black flex items-center justify-center text-[10px] font-black">1</div>
+                              <span className="text-sm font-bold text-gray-200">{w.name}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-sm font-black text-yellow-400/80">
+                              <Coins className="w-3.5 h-3.5" />{w.win.toLocaleString()}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="text-center py-2 text-sm font-black text-gray-500">
+                        {lang === 'AR' ? 'لا يوجد رابحين في هذه الجولة' : 'No winners this round'}
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
 
       {/* Leaderboard Modal */}
