@@ -1683,6 +1683,7 @@ export default function App() {
   const [openChat, setOpenChat] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   const [chatInput, setChatInput] = useState("");
+  const [lastReadTimes, setLastReadTimes] = useState(() => { try { return JSON.parse(localStorage.getItem("chat-last-read") || "{}"); } catch { return {}; } });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const membersNavRef = useRef(null);
   // Presence
@@ -1849,14 +1850,34 @@ export default function App() {
   // ── Real-time listener for open chat ──
   useEffect(() => {
     if (!openChat?.chatKey) return;
+    // علّم المحادثة كمقروءة فور فتحها
+    const markRead = (key) => {
+      const now = Date.now();
+      setLastReadTimes(prev => { const next = { ...prev, [key]: now }; localStorage.setItem("chat-last-read", JSON.stringify(next)); return next; });
+    };
+    markRead(openChat.chatKey);
     const unsub = onSnapshot(doc(db, "agency_data", openChat.chatKey), snap => {
       if (snap.exists()) {
         const msgs = JSON.parse(snap.data().v);
         setChatMessages(prev => ({ ...prev, [openChat.chatKey]: msgs }));
+        markRead(openChat.chatKey);
       }
     });
     return () => unsub();
   }, [openChat?.chatKey]);
+
+  // ── Background listener: محادثة المدير دائماً مراقَبة لإظهار badge ──
+  useEffect(() => {
+    if (!currentUser) return;
+    const adminKey = `chat-admin-${currentUser.id}`;
+    const unsub = onSnapshot(doc(db, "agency_data", adminKey), snap => {
+      if (snap.exists()) {
+        const msgs = JSON.parse(snap.data().v);
+        setChatMessages(prev => ({ ...prev, [adminKey]: msgs }));
+      }
+    });
+    return () => unsub();
+  }, [currentUser?.id]); // eslint-disable-line
 
   // ── Close members nav on outside click ──
   useEffect(() => {
@@ -4411,19 +4432,30 @@ export default function App() {
               {/* Header */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: theme.card, borderBottom: `1px solid ${theme.border}`, flexShrink: 0 }}>
                 <button onClick={() => setOpenChat(null)} style={S.backBtn}>{dir==="rtl"?"❮":"❯"}</button>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: openChat.user.avatar ? "none" : theme.accentDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: theme.accent, flexShrink: 0 }}>
-                  {openChat.user.avatar ? <img src={openChat.user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : openChat.user.name.charAt(0)}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: openChat.user.avatar ? "none" : theme.accentDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: theme.accent }}>
+                    {openChat.user.avatar ? <img src={openChat.user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : openChat.user.name.charAt(0)}
+                  </div>
+                  {openChat.user.id !== "admin" && isUserOnline(openChat.user.id) && <span style={{ position:"absolute", bottom:1, right:1, width:10, height:10, borderRadius:"50%", background:"#2ecc71", border:`2px solid ${theme.card}` }} />}
                 </div>
-                <span style={{ flex: 1, fontWeight: 800, fontSize: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: nc(openChat.user) }}>{openChat.user.name}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: nc(openChat.user) }}>{openChat.user.name}</div>
+                  {openChat.user.id !== "admin" && <div style={{ fontSize: 11, color: isUserOnline(openChat.user.id) ? "#2ecc71" : theme.textMuted, fontWeight: 600 }}>{isUserOnline(openChat.user.id) ? (lang==="ar"?"متصل الآن":"Online") : (lang==="ar"?"غير متصل":"Offline")}</div>}
+                </div>
               </div>
               {/* Messages */}
               <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
                 {!chatMsgs.length && <p style={{ textAlign: "center", color: theme.textMuted, fontSize: 13, margin: "auto" }}>{t("noMessages")}</p>}
                 {chatMsgs.map((msg, i) => {
-                  const isMine = msg.from === myId;
+                  const isMine = String(msg.from) === String(myId);
                   return (
-                    <div key={i} style={{ display: "flex", justifyContent: isMine ? "flex-start" : "flex-end" }}>
-                      <div style={{ maxWidth: "78%", padding: "10px 14px", borderRadius: isMine ? "18px 18px 18px 4px" : "18px 18px 4px 18px", background: isMine ? theme.accentDim : theme.accent, color: isMine ? theme.text : "#0A0A0F", fontSize: 14, fontWeight: 600, wordBreak: "break-word" }}>{msg.text}</div>
+                    <div key={i} style={{ display: "flex", justifyContent: isMine ? (dir==="rtl"?"flex-end":"flex-start") : (dir==="rtl"?"flex-start":"flex-end"), alignItems: "flex-end", gap: 6 }}>
+                      {!isMine && (
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#7C3AED,#A855F7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#fff", flexShrink: 0 }}>
+                          {(msg.name || "?").charAt(0)}
+                        </div>
+                      )}
+                      <div style={{ maxWidth: "72%", padding: "10px 14px", borderRadius: isMine ? (dir==="rtl"?"18px 4px 18px 18px":"4px 18px 18px 18px") : (dir==="rtl"?"4px 18px 18px 18px":"18px 4px 18px 18px"), background: isMine ? "linear-gradient(135deg,#7C3AED,#9D4EDD)" : (darkMode?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.07)"), color: isMine ? "#fff" : theme.text, fontSize: 14, fontWeight: 600, wordBreak: "break-word", boxShadow: isMine ? "0 2px 12px rgba(124,58,237,0.35)" : "none" }}>{msg.text}</div>
                     </div>
                   );
                 })}
@@ -5052,6 +5084,14 @@ export default function App() {
       {/* ══════════════ MOBILE BOTTOM NAV ══════════════ */}
       {(currentUser || isAdmin) && (() => {
         const pendingCount = (currentUser?.receivedRequests || []).length;
+        const myIdForBadge = currentUser ? currentUser.id : (isAdmin ? "admin" : null);
+        const unreadMsgsCount = Object.entries(chatMessages).reduce((total, [key, msgs]) => {
+          if (openChat?.chatKey === key) return total;
+          const lastRead = lastReadTimes[key] || 0;
+          const unread = msgs.filter(m => m.from !== String(myIdForBadge) && (m.time || 0) > lastRead).length;
+          return total + unread;
+        }, 0);
+        const msgBadge = pendingCount + unreadMsgsCount;
         const tabs = [
           {
             key: "home",
@@ -5087,7 +5127,7 @@ export default function App() {
             labelEn: "Messages",
             active: showMsgList,
             action: () => { setOpenChat(null); setShowGamesLobby(false); setShowFarmGame(false); setShowMarioGame(false); setShowFoodWheel(false); if(showMsgList){ closeWithAnim(setClosingMsgList,setShowMsgList); } else { setShowMsgList(true); closeWithAnim(setClosingVoting,setShowVoting); closeWithAnim(setClosingProfile,setShowMobileProfile); } },
-            badge: pendingCount,
+            badge: msgBadge,
           },
           {
             key: "profile",
@@ -5110,8 +5150,8 @@ export default function App() {
         const tabIcons = {
           home:     <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>,
           voting:   <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>,
-          games:    <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5S14.67 12 15.5 12s1.5.67 1.5 1.5S16.33 15 15.5 15zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5S19.33 12 18.5 12z"/></svg>,
-          messages: <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>,
+          games:    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="13" rx="3"/><path d="M8 13h4M10 11v4"/><circle cx="16" cy="12" r="1" fill="currentColor"/><circle cx="18" cy="14" r="1" fill="currentColor"/></svg>,
+          messages: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>,
           profile:  <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>,
         };
         const tabColors = {
@@ -5167,8 +5207,8 @@ export default function App() {
                     )}
                     {/* badge */}
                     {tab.badge > 0 && (
-                      <span style={{ position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, background: "#EC4899", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "2px solid rgba(10,8,20,0.96)" }}>
-                        {tab.badge}
+                      <span style={{ position: "absolute", top: -6, right: -6, minWidth: 20, height: 20, borderRadius: 10, background: "#E53935", color: "#fff", fontSize: 11, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", border: "2.5px solid rgba(10,8,20,0.96)", boxShadow: "0 2px 8px rgba(229,57,53,0.6)", fontFamily: "system-ui,sans-serif" }}>
+                        {tab.badge > 99 ? "99+" : tab.badge}
                       </span>
                     )}
                   </div>
