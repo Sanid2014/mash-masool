@@ -106,11 +106,17 @@ export default function FoodWheel({ onBack, currentUser, onCoinsChange, users })
   const playerName = currentUser?.name || 'لاعب';
 
   const getAvatar = (entry) => {
+    // Try by userId first (new entries)
     if (entry.userId) {
-      if (String(entry.userId) === String(currentUser?.id)) return currentUser?.avatar || entry.avatar || null;
+      if (String(entry.userId) === String(currentUser?.id)) return currentUser?.avatar || null;
       const u = (users || []).find(x => String(x.id) === String(entry.userId));
       if (u?.avatar) return u.avatar;
     }
+    // Fallback: match by name for old entries without userId
+    const byName = (users || []).find(x => x.name && entry.name && x.name.trim() === entry.name.trim());
+    if (byName?.avatar) return byName.avatar;
+    if (entry.name && currentUser?.name && entry.name.trim() === currentUser.name.trim()) return currentUser?.avatar || null;
+    // Last resort: stored avatar (may be generated SVG)
     return entry.avatar || null;
   };
 
