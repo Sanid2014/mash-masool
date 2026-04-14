@@ -102,8 +102,17 @@ const CircularItem = ({ item, index, total, isHighlighted, isTop4, betAmount, on
 const getSaudiDateStr = () =>
   new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' }); // "YYYY-MM-DD"
 
-export default function FoodWheel({ onBack, currentUser, onCoinsChange }) {
+export default function FoodWheel({ onBack, currentUser, onCoinsChange, users }) {
   const playerName = currentUser?.name || 'لاعب';
+
+  const getAvatar = (entry) => {
+    if (entry.userId) {
+      if (String(entry.userId) === String(currentUser?.id)) return currentUser?.avatar || entry.avatar || null;
+      const u = (users || []).find(x => String(x.id) === String(entry.userId));
+      if (u?.avatar) return u.avatar;
+    }
+    return entry.avatar || null;
+  };
 
   const [balance, setBalance] = useState(currentUser?.xcoins ?? 1000000);
   const [dailyProfit, setDailyProfit] = useState(() => {
@@ -290,7 +299,8 @@ export default function FoodWheel({ onBack, currentUser, onCoinsChange }) {
       const newEntry = {
         id: `${currentUser?.id || 'guest'}_${Date.now()}`,
         name: playerName,
-        avatar: generateAvatar(playerName),
+        avatar: currentUser?.avatar || generateAvatar(playerName),
+        userId: currentUser?.id || null,
         winAmount: winnings,
         winningItem: finalResult,
         ts: Date.now(),
@@ -426,7 +436,7 @@ export default function FoodWheel({ onBack, currentUser, onCoinsChange }) {
               <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000" />
               <div className="relative w-14 h-14 bg-[#1A1C2C]/80 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center overflow-visible">
                 {leaderboard[0]
-                  ? <img src={leaderboard[0].avatar} alt="Top" className="w-12 h-12 rounded-full object-cover border-2 border-yellow-400/50" />
+                  ? <img src={getAvatar(leaderboard[0])} alt="Top" className="w-12 h-12 rounded-full object-cover border-2 border-yellow-400/50" />
                   : <Trophy className="w-6 h-6 text-yellow-400" />}
                 <div className="absolute -top-1 -left-1 bg-yellow-400 text-black w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-lg">#1</div>
               </div>
@@ -634,7 +644,7 @@ export default function FoodWheel({ onBack, currentUser, onCoinsChange }) {
                     <div key={entry.id} className={`flex items-center justify-between p-4 rounded-3xl border ${idx===0?'bg-yellow-400/10 border-yellow-400/20':'bg-white/5 border-white/5'}`}>
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <img src={entry.avatar} alt={entry.name} className={`w-12 h-12 rounded-xl object-cover border-2 ${idx===0?'border-yellow-400':idx===1?'border-gray-300':idx===2?'border-orange-400':'border-white/10'}`} />
+                          <img src={getAvatar(entry)} alt={entry.name} className={`w-12 h-12 rounded-xl object-cover border-2 ${idx===0?'border-yellow-400':idx===1?'border-gray-300':idx===2?'border-orange-400':'border-white/10'}`} />
                           <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${idx===0?'bg-yellow-400 text-black':idx===1?'bg-gray-300 text-black':idx===2?'bg-orange-400 text-black':'bg-white/10 text-white'}`}>{idx+1}</div>
                         </div>
                         <div className="flex flex-col">

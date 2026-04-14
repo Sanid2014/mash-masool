@@ -5261,7 +5261,7 @@ export default function App() {
       {showFarmGame && currentUser && <FarmGame onClose={() => setShowFarmGame(false)} currentUser={currentUser} lang={lang} onCoinsChange={farmCoinsChange} users={users} />}
       {showFoodWheel && currentUser && (
         <div style={{ position:"fixed", inset:0, zIndex:9999, overflowY:"auto" }}>
-          <FoodWheel onBack={() => setShowFoodWheel(false)} currentUser={currentUser} onCoinsChange={farmCoinsChange} />
+          <FoodWheel onBack={() => setShowFoodWheel(false)} currentUser={currentUser} onCoinsChange={farmCoinsChange} users={users} />
         </div>
       )}
 
