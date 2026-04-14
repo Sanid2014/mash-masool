@@ -1087,9 +1087,10 @@ const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, 
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span style={{ fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.6)" }}>
+              <span style={{ fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.6)", flex: 1 }}>
                 {lang === "ar" ? `${(story.viewers||[]).length} مشاهدة` : `${(story.viewers||[]).length} views`}
               </span>
+              <button onClick={() => setShowViewers(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 16, flexShrink: 0 }}>✕</button>
             </div>
             {(story.viewers || []).length === 0 ? (
               <div style={{ textAlign: "center", padding: "20px 0", fontFamily: "'Cairo',sans-serif", fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 700 }}>
