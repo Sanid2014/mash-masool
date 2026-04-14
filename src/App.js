@@ -1061,7 +1061,7 @@ const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, 
 
       {/* Viewers count (for owner) */}
       {isMyStory && (
-        <div style={{ position: "absolute", bottom: 90, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 10 }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "absolute", bottom: 90, left: dir === "rtl" ? 20 : "auto", right: dir === "rtl" ? "auto" : 20, zIndex: 10 }} onClick={e => e.stopPropagation()}>
           <button
             onClick={() => setShowViewers(true)}
             style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "9px 22px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
