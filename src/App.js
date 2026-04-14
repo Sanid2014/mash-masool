@@ -956,12 +956,13 @@ const StoriesBar = ({ stories, currentUser, isAdmin, lang, dir, onAdd, onView })
   );
 };
 
-const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, lang, dir }) => {
+const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, lang, dir, users }) => {
   const [idx, setIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const [replyText, setReplyText] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [sentAnim, setSentAnim] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
   const timerRef = useRef(null);
   const inputRef = useRef(null);
   const DURATION = 5000;
@@ -1061,9 +1062,52 @@ const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, 
       {/* Viewers count (for owner) */}
       {isMyStory && (
         <div style={{ position: "absolute", bottom: 90, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 10 }} onClick={e => e.stopPropagation()}>
-          <div style={{ background: "rgba(0,0,0,0.6)", borderRadius: 99, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 16 }}>👁</span>
-            <span style={{ fontFamily: "'Cairo',sans-serif", fontSize: 13, color: "#fff", fontWeight: 700 }}>{(story.viewers || []).length} {lang === "ar" ? "مشاهدة" : "views"}</span>
+          <button
+            onClick={() => setShowViewers(true)}
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "9px 22px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span style={{ fontFamily: "'Cairo',sans-serif", fontSize: 14, color: "#fff", fontWeight: 800 }}>{(story.viewers || []).length}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Viewers sheet */}
+      {isMyStory && showViewers && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "flex-end" }} onClick={() => setShowViewers(false)}>
+          <div style={{ width: "100%", background: "rgba(14,10,28,0.97)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderRadius: "22px 22px 0 0", padding: "16px 20px calc(env(safe-area-inset-bottom,0px) + 24px)", maxHeight: "55vh", overflowY: "auto", direction: dir }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span style={{ fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.6)" }}>
+                {lang === "ar" ? `${(story.viewers||[]).length} مشاهدة` : `${(story.viewers||[]).length} views`}
+              </span>
+            </div>
+            {(story.viewers || []).length === 0 ? (
+              <div style={{ textAlign: "center", padding: "20px 0", fontFamily: "'Cairo',sans-serif", fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 700 }}>
+                {lang === "ar" ? "لا يوجد مشاهدون بعد" : "No viewers yet"}
+              </div>
+            ) : (story.viewers || []).map(viewerId => {
+              const u = (users || []).find(x => String(x.id) === String(viewerId));
+              const name = u?.name || (lang === "ar" ? "عضو" : "Member");
+              const avatar = u?.avatar || null;
+              return (
+                <div key={viewerId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#7C3AED,#A855F7)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#fff", flexShrink: 0 }}>
+                    {avatar ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : name.charAt(0)}
+                  </div>
+                  <span style={{ fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: "#fff" }}>{name}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -5398,6 +5442,7 @@ export default function App() {
           onMarkViewed={markStoryViewed}
           onDelete={deleteStory}
           onComment={sendStoryReply}
+          users={users}
         />
       )}
 
