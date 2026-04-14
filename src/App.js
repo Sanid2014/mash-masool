@@ -5689,22 +5689,22 @@ export default function App() {
             )
           )}
 
-          {/* ── المقال المفتوح (overlay يصعد من الأسفل) ── */}
+          {/* ── المقال المفتوح — Instagram style ── */}
           {openNaifArticle && (() => {
             const art = naifDiary.find(a=>a.id===openNaifArticle.id) || openNaifArticle;
-            const EMOJIS = ["❤️","🔥","😂","😮","👏","💯","🎉","💜"];
             const myId = currentUser?.id ?? (isAdmin?"admin":null);
-            const myReaction = myId ? (art.userReactions||{})[String(myId)] : null;
-            const toggleReaction = (emoji) => {
+            const likedUserIds = Object.keys(art.userReactions||{});
+            const likeCount = likedUserIds.length;
+            const iLiked = myId ? likedUserIds.includes(String(myId)) : false;
+            const quickLike = () => {
               if (!myId) return;
               updateNaifDiary(nd => nd.map(a => {
                 if (a.id !== art.id) return a;
                 const ur = {...(a.userReactions||{})};
-                const prev = ur[String(myId)];
                 const reactions = {...(a.reactions||{})};
-                if (prev) { reactions[prev]=Math.max(0,(reactions[prev]||1)-1); if(!reactions[prev])delete reactions[prev]; }
-                if (prev !== emoji) { reactions[emoji]=(reactions[emoji]||0)+1; ur[String(myId)]=emoji; }
-                else { delete ur[String(myId)]; }
+                const prev = ur[String(myId)];
+                if (prev) { reactions[prev]=Math.max(0,(reactions[prev]||1)-1); if(!reactions[prev])delete reactions[prev]; delete ur[String(myId)]; }
+                else { reactions["❤️"]=(reactions["❤️"]||0)+1; ur[String(myId)]="❤️"; }
                 return {...a,reactions,userReactions:ur};
               }));
             };
@@ -5714,33 +5714,38 @@ export default function App() {
               updateNaifDiary(nd => nd.map(a => a.id===art.id ? {...a,comments:[...(a.comments||[]),comment]} : a));
               setNaifComment("");
             };
+            const bg = darkMode ? "#0d0820" : "#fafafa";
+            const cardBg = darkMode ? "#16102a" : "#fff";
+            const textColor = darkMode ? "#f0e8ff" : "#111";
+            const mutedColor = darkMode ? "rgba(232,213,255,0.45)" : "#8e8e8e";
+            const borderColor = darkMode ? "rgba(168,130,255,0.12)" : "#efefef";
             return (
-              <div style={{ position:"absolute",inset:0,zIndex:25,display:"flex",flexDirection:"column",background: darkMode?"#0d0820":"#f3eeff",animation:"sheetUp 0.32s cubic-bezier(0.32,0.72,0,1)" }}>
-                {/* header المقال */}
-                <div style={{ flexShrink:0,display:"flex",alignItems:"center",gap:12,padding:"calc(env(safe-area-inset-top,0px) + 14px) 16px 14px",background: darkMode?"linear-gradient(90deg,#2d0a5c,#1a2a6c)":"linear-gradient(90deg,#9b59b6,#6c5ce7)",boxShadow:"0 4px 20px rgba(0,0,0,0.3)" }}>
-                  <button onClick={() => { setOpenNaifArticle(null); setNaifMenuOpen(false); }} style={{ width:40,height:40,borderRadius:"50%",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.15)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",color:"#fff",fontSize:20,fontWeight:900,flexShrink:0 }}>{dir==="rtl"?"❮":"❯"}</button>
-                  <span style={{ flex:1,color:"#fff",fontWeight:900,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{art.title}</span>
-                  {/* ⋮ النقاط الثلاث */}
+              <div style={{ position:"absolute",inset:0,zIndex:25,display:"flex",flexDirection:"column",background:bg,animation:"sheetUp 0.32s cubic-bezier(0.32,0.72,0,1)" }}>
+
+                {/* ── Header (Instagram-style) ── */}
+                <div style={{ flexShrink:0,display:"flex",alignItems:"center",gap:10,padding:"calc(env(safe-area-inset-top,0px) + 10px) 14px 10px",background:cardBg,borderBottom:`1px solid ${borderColor}` }}>
+                  <button onClick={() => { setOpenNaifArticle(null); setNaifMenuOpen(false); }} style={{ width:36,height:36,borderRadius:"50%",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",background:"transparent",color:textColor,fontSize:22,fontWeight:900,flexShrink:0 }}>{dir==="rtl"?"❮":"❯"}</button>
+                  {/* Avatar */}
+                  <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)",padding:2,flexShrink:0 }}>
+                    <div style={{ width:"100%",height:"100%",borderRadius:"50%",background:cardBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:900,color:"#9b59b6" }}>ن</div>
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:800,fontSize:14,color:textColor }}>نايف</div>
+                    <div style={{ fontSize:11,color:mutedColor }}>{art.date}</div>
+                  </div>
+                  {/* ⋮ menu */}
                   {(modCan("naifDiary","edit") || modCan("naifDiary","delete")) && (
                     <div style={{ position:"relative",flexShrink:0 }}>
-                      <button onClick={e=>{e.stopPropagation();setNaifMenuOpen(v=>!v);}} style={{ width:40,height:40,borderRadius:"50%",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,background:"rgba(255,255,255,0.15)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)" }}>
-                        {[0,1,2].map(d=><span key={d} style={{ width:4,height:4,borderRadius:"50%",background:"#fff",display:"block" }}/>)}
+                      <button onClick={e=>{e.stopPropagation();setNaifMenuOpen(v=>!v);}} style={{ width:36,height:36,border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3 }}>
+                        {[0,1,2].map(d=><span key={d} style={{ width:4,height:4,borderRadius:"50%",background:textColor,display:"block" }}/>)}
                       </button>
                       {naifMenuOpen && (
                         <>
                           <div style={{ position:"fixed",inset:0,zIndex:900 }} onClick={()=>setNaifMenuOpen(false)} />
-                          <div style={{ position:"absolute",top:46,left:0,zIndex:901,background: darkMode?"#1a1030":"#fff",borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",border:`1px solid ${darkMode?"rgba(168,130,255,0.2)":"rgba(155,89,182,0.15)"}`,overflow:"hidden",minWidth:150 }}>
-                            {modCan("naifDiary","edit") && (
-                              <button onClick={e=>{e.stopPropagation();setNaifMenuOpen(false);setNaifConfirm({type:"edit",article:art});}} style={{ width:"100%",padding:"13px 18px",border:"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,color: darkMode?"#a78bfa":"#7c3aed" }}>
-                                <span style={{ fontSize:17 }}>✏️</span> تعديل
-                              </button>
-                            )}
-                            {modCan("naifDiary","edit")&&modCan("naifDiary","delete") && <div style={{ height:1,background: darkMode?"rgba(168,130,255,0.1)":"rgba(155,89,182,0.1)" }}/>}
-                            {modCan("naifDiary","delete") && (
-                              <button onClick={e=>{e.stopPropagation();setNaifMenuOpen(false);setNaifConfirm({type:"delete",article:art});}} style={{ width:"100%",padding:"13px 18px",border:"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,color:"#e74c3c" }}>
-                                <span style={{ fontSize:17 }}>🗑</span> حذف
-                              </button>
-                            )}
+                          <div style={{ position:"absolute",top:40,left:0,zIndex:901,background:cardBg,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.25)",border:`1px solid ${borderColor}`,overflow:"hidden",minWidth:150 }}>
+                            {modCan("naifDiary","edit") && <button onClick={e=>{e.stopPropagation();setNaifMenuOpen(false);setNaifConfirm({type:"edit",article:art});}} style={{ width:"100%",padding:"13px 18px",border:"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,color:"#7c3aed" }}><span style={{ fontSize:17 }}>✏️</span> تعديل</button>}
+                            {modCan("naifDiary","edit")&&modCan("naifDiary","delete") && <div style={{ height:1,background:borderColor }}/>}
+                            {modCan("naifDiary","delete") && <button onClick={e=>{e.stopPropagation();setNaifMenuOpen(false);setNaifConfirm({type:"delete",article:art});}} style={{ width:"100%",padding:"13px 18px",border:"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,color:"#e74c3c" }}><span style={{ fontSize:17 }}>🗑</span> حذف</button>}
                           </div>
                         </>
                       )}
@@ -5748,81 +5753,93 @@ export default function App() {
                   )}
                 </div>
 
-                {/* body المقال */}
-                <div style={{ flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"20px 16px calc(env(safe-area-inset-bottom,0px) + 20px)" }}>
-                  <div style={{ maxWidth:680,margin:"0 auto" }}>
-                    {/* صور الغلاف */}
-                    {(art.images||[]).length>0 && (
-                      <div style={{ borderRadius:16,overflow:"hidden",marginBottom:16,aspectRatio:"16/8",position:"relative" }}>
-                        <img src={art.images[0]} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }} />
-                        {art.images.length>1&&<span style={{ position:"absolute",bottom:10,right:12,background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99 }}>📷 {art.images.length}</span>}
+                {/* ── Scrollable body ── */}
+                <div style={{ flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch" }}>
+
+                  {/* صورة كاملة العرض */}
+                  {(art.images||[]).length>0 && (
+                    <div style={{ width:"100%",background:"#000",position:"relative" }}>
+                      <img src={art.images[0]} alt="" style={{ width:"100%",maxHeight:"60vw",objectFit:"cover",display:"block" }} />
+                      {art.images.length>1 && <span style={{ position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99 }}>1 / {art.images.length}</span>}
+                    </div>
+                  )}
+
+                  <div style={{ background:cardBg }}>
+                    {/* ── شريط الأزرار (Instagram action bar) ── */}
+                    <div style={{ display:"flex",alignItems:"center",gap:4,padding:"10px 14px 6px" }}>
+                      {/* زر اللايك */}
+                      <button onClick={quickLike} style={{ background:"none",border:"none",cursor:myId?"pointer":"default",padding:"4px 6px",display:"flex",alignItems:"center",gap:0,transition:"transform 0.15s",transform:iLiked?"scale(1.15)":"scale(1)" }}>
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill={iLiked?"#ed4956":"none"} stroke={iLiked?"#ed4956":"#262626"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: iLiked?"#ed4956":textColor }}>
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                      {/* زر التعليق */}
+                      <button onClick={() => document.getElementById("naif-comment-input")?.focus()} style={{ background:"none",border:"none",cursor:"pointer",padding:"4px 6px",display:"flex",alignItems:"center" }}>
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* عدد اللايكات */}
+                    {likeCount > 0 && <div style={{ padding:"0 14px 6px",fontSize:13,fontWeight:800,color:textColor }}>{likeCount.toLocaleString()} {lang==="ar"?"إعجاب":"likes"}</div>}
+
+                    {/* العنوان والمحتوى */}
+                    <div style={{ padding:"2px 14px 14px" }}>
+                      <p style={{ margin:0,fontSize:14,lineHeight:1.8,color:textColor }}>
+                        <span style={{ fontWeight:800,marginLeft:6 }}>نايف</span>
+                        {art.title && <span style={{ fontWeight:700,color:textColor }}> {art.title}</span>}
+                      </p>
+                      {art.content && <p style={{ margin:"6px 0 0",fontSize:14,lineHeight:1.8,color:textColor,whiteSpace:"pre-wrap" }}>{art.content}</p>}
+                    </div>
+
+                    {/* باقي الصور */}
+                    {(art.images||[]).length>1 && (
+                      <div style={{ padding:"0 14px 14px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3 }}>
+                        {art.images.slice(1).map((img,idx)=>(
+                          <div key={idx} style={{ aspectRatio:"1",overflow:"hidden",cursor:"pointer" }} onClick={()=>window.open(img,"_blank")}>
+                            <img src={img} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
+                          </div>
+                        ))}
                       </div>
                     )}
 
-                    {/* المحتوى */}
-                    <div style={{ borderRadius:16,background: darkMode?"rgba(255,255,255,0.05)":"#fff",border:`1px solid ${darkMode?"rgba(168,130,255,0.2)":"rgba(155,89,182,0.15)"}`,overflow:"hidden",marginBottom:16 }}>
-                      <div style={{ height:4,background:"linear-gradient(90deg,#9b59b6,#6c5ce7,#a29bfe)" }}/>
-                      <div style={{ padding:"20px 20px 18px" }}>
-                        <div style={{ fontSize:11,color: darkMode?"rgba(232,213,255,0.45)":"#999",marginBottom:14 }}>✍️ نايف · 📅 {art.date}</div>
-                        <p style={{ margin:0,fontSize:15,lineHeight:2,color: darkMode?"rgba(232,213,255,0.85)":"#333",whiteSpace:"pre-wrap" }}>{art.content}</p>
-                      </div>
-                      {/* باقي الصور */}
-                      {(art.images||[]).length>1 && (
-                        <div style={{ padding:"0 16px 16px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8 }}>
-                          {art.images.slice(1).map((img,idx)=>(
-                            <div key={idx} style={{ borderRadius:10,overflow:"hidden",aspectRatio:"1",cursor:"pointer" }} onClick={()=>window.open(img,"_blank")}>
-                              <img src={img} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <div style={{ height:1,background:borderColor,margin:"0 0 10px" }} />
 
-                    {/* التفاعلات */}
-                    <div style={{ borderRadius:14,background: darkMode?"rgba(255,255,255,0.04)":"#fff",border:`1px solid ${darkMode?"rgba(168,130,255,0.12)":"rgba(155,89,182,0.1)"}`,padding:"14px 16px",marginBottom:14 }}>
-                      <div style={{ fontSize:11,fontWeight:700,color: darkMode?"rgba(232,213,255,0.45)":"#999",marginBottom:10 }}>تفاعل مع المقال</div>
-                      <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>
-                        {EMOJIS.map(emoji=>{
-                          const count=(art.reactions||{})[emoji]||0;
-                          const mine=myReaction===emoji;
+                    {/* التعليقات */}
+                    <div style={{ padding:"0 14px" }}>
+                      {(art.comments||[]).length===0 && <p style={{ fontSize:13,color:mutedColor,padding:"6px 0 10px" }}>{lang==="ar"?"لا توجد تعليقات بعد":"No comments yet"}</p>}
+                      <div style={{ display:"flex",flexDirection:"column",gap:14,marginBottom:16 }}>
+                        {(art.comments||[]).map(c => {
+                          const cu = users.find(u=>String(u.id)===String(c.userId));
                           return (
-                            <button key={emoji} onClick={()=>toggleReaction(emoji)} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:99,border:`2px solid ${mine?"rgba(168,130,255,0.7)":"rgba(168,130,255,0.18)"}`,background: mine?(darkMode?"rgba(168,130,255,0.2)":"rgba(168,130,255,0.1)"):"transparent",cursor:myId?"pointer":"default",fontSize:18,transition:"all 0.15s" }}>
-                              {emoji}{count>0&&<span style={{ fontSize:12,fontWeight:800,color: darkMode?"#E8D5FF":"#3d0088" }}>{count}</span>}
-                            </button>
+                            <div key={c.id} style={{ display:"flex",gap:10,alignItems:"flex-start" }}>
+                              <div style={{ width:32,height:32,borderRadius:"50%",flexShrink:0,overflow:"hidden",background:"linear-gradient(135deg,#9b59b6,#6c5ce7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff" }}>
+                                {cu?.avatar ? <img src={cu.avatar} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }}/> : c.userName.charAt(0)}
+                              </div>
+                              <div style={{ flex:1 }}>
+                                <span className={c.userId==="admin"?"admin-gold":""} style={{ fontSize:13,fontWeight:800,color:c.userId==="admin"?"#D4AF37":(cu?.nameColor||textColor),marginLeft:6 }}>{c.userName}</span>
+                                <span style={{ fontSize:13,color:textColor,lineHeight:1.6 }}>{c.text}</span>
+                                <div style={{ fontSize:11,color:mutedColor,marginTop:3 }}>{c.time}</div>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
                     </div>
-
-                    {/* التعليقات */}
-                    <div style={{ borderRadius:14,background: darkMode?"rgba(255,255,255,0.04)":"#fff",border:`1px solid ${darkMode?"rgba(168,130,255,0.12)":"rgba(155,89,182,0.1)"}`,padding:"14px 16px" }}>
-                      <div style={{ fontSize:13,fontWeight:800,color: darkMode?"#E8D5FF":"#3d0088",marginBottom:14 }}>💬 التعليقات ({(art.comments||[]).length})</div>
-                      {(art.comments||[]).length===0 && <p style={{ fontSize:13,color: darkMode?"rgba(232,213,255,0.35)":"#bbb",textAlign:"center",padding:"12px 0" }}>لا توجد تعليقات بعد</p>}
-                      <div style={{ display:"flex",flexDirection:"column",gap:12,marginBottom:16 }}>
-                        {(art.comments||[]).map(c=>(
-                          <div key={c.id} style={{ display:"flex",gap:10,alignItems:"flex-start" }}>
-                            <div style={{ width:34,height:34,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,#9b59b6,#6c5ce7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff" }}>{c.userName.charAt(0)}</div>
-                            <div style={{ flex:1,background: darkMode?"rgba(255,255,255,0.06)":"rgba(155,89,182,0.07)",borderRadius:12,padding:"9px 14px" }}>
-                              <div style={{ display:"flex",gap:8,alignItems:"center",marginBottom:4 }}>
-                                <span className={c.userId==="admin"?"admin-gold":""} style={{ fontSize:13,fontWeight:800,color: c.userId==="admin"?"#D4AF37":(()=>{const cu=users.find(u=>String(u.id)===String(c.userId));return cu?.nameColor||(darkMode?"#E8D5FF":"#3d0088");})() }}>{c.userName}</span>
-                                <span style={{ fontSize:11,color: darkMode?"rgba(232,213,255,0.35)":"#aaa" }}>{c.time}</span>
-                              </div>
-                              <p style={{ margin:0,fontSize:14,lineHeight:1.7,color: darkMode?"rgba(232,213,255,0.8)":"#444" }}>{c.text}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {myId ? (
-                        <div style={{ display:"flex",gap:8 }}>
-                          <input value={naifComment} onChange={e=>setNaifComment(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendComment()} placeholder="أضف تعليقًا..." style={{ ...S.input,flex:1,background: darkMode?"rgba(255,255,255,0.07)":"rgba(155,89,182,0.07)",border:`1px solid rgba(168,130,255,0.3)` }} />
-                          <button onClick={sendComment} style={{ ...S.btn,background:"linear-gradient(90deg,#9b59b6,#6c5ce7)",color:"#fff",border:"none",fontWeight:800 }}>إرسال</button>
-                        </div>
-                      ) : (
-                        <p style={{ fontSize:12,color: darkMode?"rgba(232,213,255,0.35)":"#aaa",textAlign:"center" }}>سجّل دخولك للتعليق</p>
-                      )}
-                    </div>
                   </div>
                 </div>
+
+                {/* ── حقل التعليق (ثابت في الأسفل) ── */}
+                {myId && (
+                  <div style={{ flexShrink:0,display:"flex",alignItems:"center",gap:10,padding:`10px 14px calc(env(safe-area-inset-bottom,0px) + 10px)`,background:cardBg,borderTop:`1px solid ${borderColor}` }}>
+                    <div style={{ width:32,height:32,borderRadius:"50%",flexShrink:0,overflow:"hidden",background:"linear-gradient(135deg,#9b59b6,#6c5ce7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff" }}>
+                      {currentUser?.avatar ? <img src={currentUser.avatar} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }}/> : (currentUser?.name||"ن").charAt(0)}
+                    </div>
+                    <input id="naif-comment-input" value={naifComment} onChange={e=>setNaifComment(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendComment()} placeholder={lang==="ar"?"أضف تعليقًا...":"Add a comment..."} style={{ flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:textColor,fontFamily:"'Cairo',sans-serif" }} />
+                    {naifComment.trim() && <button onClick={sendComment} style={{ background:"none",border:"none",cursor:"pointer",color:"#7c3aed",fontWeight:800,fontSize:14,fontFamily:"'Cairo',sans-serif" }}>{lang==="ar"?"نشر":"Post"}</button>}
+                  </div>
+                )}
               </div>
             );
           })()}
