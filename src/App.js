@@ -974,7 +974,7 @@ const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, 
   }, [idx]); // eslint-disable-line
 
   useEffect(() => {
-    if (inputFocused) { clearInterval(timerRef.current); return; }
+    if (inputFocused || showViewers) { clearInterval(timerRef.current); return; }
     setProgress(0);
     const start = Date.now();
     timerRef.current = setInterval(() => {
@@ -988,7 +988,7 @@ const StoryViewer = ({ group, myId, onClose, onMarkViewed, onDelete, onComment, 
       }
     }, 50);
     return () => clearInterval(timerRef.current);
-  }, [idx, inputFocused]); // eslint-disable-line
+  }, [idx, inputFocused, showViewers]); // eslint-disable-line
 
   const goNext = () => { if (inputFocused) return; clearInterval(timerRef.current); if (idx < group.stories.length - 1) setIdx(i => i + 1); else onClose(); };
   const goPrev = () => { if (inputFocused) return; clearInterval(timerRef.current); if (idx > 0) setIdx(i => i - 1); };
