@@ -3634,7 +3634,10 @@ export default function App() {
             </div>
             <div style={{ padding: "16px 20px 0" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>⬡ {t("votingSystem")}</h2>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 3H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h13.586l3.707 3.707A1 1 0 0 0 22 21V4a1 1 0 0 0-1-1z"/><line x1="7" y1="8" x2="7" y2="13"/><line x1="11" y1="10" x2="11" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/></svg>
+                  {t("votingSystem")}
+                </h2>
                 <button onClick={() => closeWithAnim(setClosingVoting,setShowVoting)} style={S.backBtn}>{dir==="rtl"?"❮":"❯"}</button>
               </div>
               <div style={{ display: "flex", gap: 0, borderBottom: `2px solid ${theme.border}` }}>
