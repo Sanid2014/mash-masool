@@ -278,7 +278,7 @@ const _slicePath = (cx, cy, R, i, n) => {
   return `M${cx},${cy} L${x0},${y0} A${R},${R},0,${large},1,${x1},${y1}Z`;
 };
 
-const FarmGame = ({ onClose, currentUser, lang, onCoinsChange }) => {
+const FarmGame = ({ onClose, currentUser, lang, onCoinsChange, users }) => {
   const AMOUNTS = [1000, 10000, 50000, 100000, 1000000];
   const MAX_BETS = 6;
   const [timer, setTimer]           = useState(30);
@@ -468,6 +468,16 @@ const FarmGame = ({ onClose, currentUser, lang, onCoinsChange }) => {
     }
   }, [phase, result]); // eslint-disable-line
 
+  const getAvatar = (uid, fallbackAvatar) => {
+    if (String(uid) === String(currentUser?.id)) return currentUser?.avatar || fallbackAvatar || null;
+    const u = (users || []).find(x => String(x.id) === String(uid));
+    return u?.avatar || fallbackAvatar || null;
+  };
+  const getName = (uid, fallbackName) => {
+    if (String(uid) === String(currentUser?.id)) return currentUser?.name || fallbackName || "?";
+    const u = (users || []).find(x => String(x.id) === String(uid));
+    return u?.name || fallbackName || "?";
+  };
   const fmtCoins = (n) => n >= 1000000 ? (n/1000000).toFixed(1)+"M" : n >= 1000 ? (n/1000).toFixed(0)+"K" : String(n);
   const itemLabel = (key) => { if (key==="pizza") return "🍕"; if (key==="salata") return "🥗"; const i = FARM_ITEMS.find(x=>x.key===key); return i ? i.emoji : "?"; };
 
@@ -553,10 +563,10 @@ const FarmGame = ({ onClose, currentUser, lang, onCoinsChange }) => {
             <div style={{ position:'relative', width:50, height:50 }}>
               <div style={{ position:'absolute', inset:-2, borderRadius:'50%', background:'conic-gradient(#ffd700,#f59e0b,#ffd700)', animation:'spin 3s linear infinite' }}/>
               <div style={{ position:'absolute', inset:1, borderRadius:'50%', background:'#08011a' }}/>
-              {kingToday.avatar
-                ? <img src={kingToday.avatar} alt='' style={{ position:'absolute', inset:3, borderRadius:'50%', objectFit:'cover', width:'calc(100% - 6px)', height:'calc(100% - 6px)', zIndex:2 }}/>
-                : <div style={{ position:'absolute', inset:3, borderRadius:'50%', background:'linear-gradient(135deg,#ffd700,#f59e0b)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:900, color:'#000', zIndex:2 }}>{kingToday.name?.[0]||'?'}</div>
-              }
+              {(() => { const av = getAvatar(kingToday.userId, kingToday.avatar); return av
+                ? <img src={av} alt='' style={{ position:'absolute', inset:3, borderRadius:'50%', objectFit:'cover', width:'calc(100% - 6px)', height:'calc(100% - 6px)', zIndex:2 }}/>
+                : <div style={{ position:'absolute', inset:3, borderRadius:'50%', background:'linear-gradient(135deg,#ffd700,#f59e0b)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:900, color:'#000', zIndex:2 }}>{(getName(kingToday.userId,kingToday.name))?.[0]||'?'}</div>
+              ; })()}
               <span style={{ position:'absolute', top:-8, left:'50%', transform:'translateX(-50%)', fontSize:14, zIndex:3 }}>👑</span>
             </div>
             <span style={{ fontSize:9, color:'#ffd700', fontWeight:800, maxWidth:54, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{fmtCoins(kingToday.totalWin)}🪙</span>
@@ -773,16 +783,18 @@ const FarmGame = ({ onClose, currentUser, lang, onCoinsChange }) => {
         <div style={{ padding:"0 12px 12px",flexShrink:0 }}>
           <div style={{ background:"rgba(0,0,0,0.3)",borderRadius:14,padding:"10px 12px",maxWidth:420,margin:"0 auto",border:"1px solid rgba(255,255,255,0.06)" }}>
             <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:800,color:"#fbbf24" }}>🏆 {lang==="ar"?"فائزو اليوم":"Today's Winners"}</p>
-            {leaderboard.filter(l => l.date === new Date().toDateString()).slice(0,5).map((l, i) => (
+            {leaderboard.filter(l => l.date === new Date().toDateString()).slice(0,5).map((l, i) => {
+              const av = getAvatar(l.userId, l.avatar); const nm = getName(l.userId, l.name); return (
               <div key={l.userId} style={{ display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
                 <span style={{ fontSize:14,width:20,textAlign:"center",color:["#fbbf24","#9ca3af","#b45309","#fff","#fff"][i] }}>
                   {["👑","🥈","🥉","4","5"][i]}
                 </span>
-                {l.avatar ? <img src={l.avatar} alt="" style={{ width:24,height:24,borderRadius:"50%",objectFit:"cover" }} /> : <div style={{ width:24,height:24,borderRadius:"50%",background:"rgba(251,191,36,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fbbf24",fontWeight:800 }}>{l.name?.[0]||"?"}</div>}
-                <span style={{ flex:1,fontSize:12,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{l.name}</span>
+                {av ? <img src={av} alt="" style={{ width:24,height:24,borderRadius:"50%",objectFit:"cover" }} /> : <div style={{ width:24,height:24,borderRadius:"50%",background:"rgba(251,191,36,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fbbf24",fontWeight:800 }}>{nm?.[0]||"?"}</div>}
+                <span style={{ flex:1,fontSize:12,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{nm}</span>
                 <span style={{ fontSize:12,fontWeight:900,color:"#fbbf24" }}>{fmtCoins(l.totalWin)} 🪙</span>
               </div>
-            ))}
+            );})}
+
           </div>
         </div>
       )}
@@ -792,13 +804,15 @@ const FarmGame = ({ onClose, currentUser, lang, onCoinsChange }) => {
         <div style={{ padding:"0 12px 80px",flexShrink:0 }}>
           <div style={{ background:"rgba(0,0,0,0.3)",borderRadius:14,padding:"10px 12px",maxWidth:420,margin:"0 auto",border:"1px solid rgba(255,255,255,0.06)" }}>
             <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.6)" }}>🎲 {lang==="ar"?"رهانات الجولة":"Round Bets"} ({Object.keys(allBets).length})</p>
-            {Object.values(allBets).slice(0,5).map((b,i) => {
+            {Object.entries(allBets).slice(0,5).map(([uid,b],i) => {
               const items = Array.isArray(b.items) ? b.items : (b.item ? [{ item: b.item, amount: b.amount }] : []);
               const total = items.reduce((s,x)=>s+x.amount,0);
+              const av = getAvatar(uid, b.avatar);
+              const nm = getName(uid, b.name);
               return (
                 <div key={i} style={{ display:"flex",alignItems:"center",gap:8,padding:"4px 0",fontSize:12 }}>
-                  {b.avatar ? <img src={b.avatar} alt="" style={{ width:20,height:20,borderRadius:"50%",objectFit:"cover" }} /> : <div style={{ width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"rgba(255,255,255,0.6)" }}>{b.name?.[0]||"?"}</div>}
-                  <span style={{ flex:1,color:"rgba(255,255,255,0.7)",fontWeight:600 }}>{b.name}</span>
+                  {av ? <img src={av} alt="" style={{ width:20,height:20,borderRadius:"50%",objectFit:"cover" }} /> : <div style={{ width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"rgba(255,255,255,0.6)" }}>{nm?.[0]||"?"}</div>}
+                  <span style={{ flex:1,color:"rgba(255,255,255,0.7)",fontWeight:600 }}>{nm}</span>
                   <span style={{ display:"flex",gap:2 }}>{items.map(x=><span key={x.item}>{itemLabel(x.item)}</span>)}</span>
                   <span style={{ color:"#fbbf24",fontWeight:700 }}>{fmtCoins(total)}</span>
                 </div>
@@ -831,19 +845,20 @@ const FarmGame = ({ onClose, currentUser, lang, onCoinsChange }) => {
             <div style={{ padding:"12px 20px 20px",maxHeight:"70vh",overflowY:"auto" }}>
               {leaderboard.filter(l=>l.date===today).length===0 ? (
                 <p style={{ textAlign:"center",color:"rgba(255,255,255,0.35)",fontSize:13,margin:"24px 0" }}>{lang==="ar"?"لا توجد نتائج اليوم بعد":"No results today yet"}</p>
-              ) : leaderboard.filter(l=>l.date===today).sort((a,b)=>b.totalWin-a.totalWin).slice(0,10).map((l,i)=>(
+              ) : leaderboard.filter(l=>l.date===today).sort((a,b)=>b.totalWin-a.totalWin).slice(0,10).map((l,i)=>{
+                const av=getAvatar(l.userId,l.avatar); const nm=getName(l.userId,l.name); return (
                 <div key={l.userId} style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:i<9?"1px solid rgba(255,255,255,0.05)":"none" }}>
                   <span style={{ fontSize:15,width:22,textAlign:"center",color:["#ffd700","#d4d4d8","#b45309","rgba(255,255,255,0.5)","rgba(255,255,255,0.4)","rgba(255,255,255,0.35)","rgba(255,255,255,0.3)","rgba(255,255,255,0.25)","rgba(255,255,255,0.2)","rgba(255,255,255,0.18)"][i] }}>
                     {["👑","🥈","🥉","4","5","6","7","8","9","10"][i]}
                   </span>
-                  {l.avatar
-                    ? <img src={l.avatar} alt="" style={{ width:32,height:32,borderRadius:"50%",objectFit:"cover",border:`2px solid ${i===0?"#ffd700":i===1?"#d4d4d8":"transparent"}` }}/>
-                    : <div style={{ width:32,height:32,borderRadius:"50%",background:"rgba(255,215,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#ffd700",fontWeight:800 }}>{l.name?.[0]||"?"}</div>
+                  {av
+                    ? <img src={av} alt="" style={{ width:32,height:32,borderRadius:"50%",objectFit:"cover",border:`2px solid ${i===0?"#ffd700":i===1?"#d4d4d8":"transparent"}` }}/>
+                    : <div style={{ width:32,height:32,borderRadius:"50%",background:"rgba(255,215,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#ffd700",fontWeight:800 }}>{nm?.[0]||"?"}</div>
                   }
-                  <span style={{ flex:1,fontSize:13,fontWeight:700,color:i===0?"#ffd700":"rgba(255,255,255,0.85)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{l.name}</span>
+                  <span style={{ flex:1,fontSize:13,fontWeight:700,color:i===0?"#ffd700":"rgba(255,255,255,0.85)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{nm}</span>
                   <span style={{ fontSize:13,fontWeight:900,color:"#fbbf24" }}>{fmtCoins(l.totalWin)} 🪙</span>
                 </div>
-              ))}
+              );})()}
             </div>
           </div>
         </div>
@@ -5243,7 +5258,7 @@ export default function App() {
         />
       )}
       {showMarioGame && <MarioGame onClose={() => setShowMarioGame(false)} />}
-      {showFarmGame && currentUser && <FarmGame onClose={() => setShowFarmGame(false)} currentUser={currentUser} lang={lang} onCoinsChange={farmCoinsChange} />}
+      {showFarmGame && currentUser && <FarmGame onClose={() => setShowFarmGame(false)} currentUser={currentUser} lang={lang} onCoinsChange={farmCoinsChange} users={users} />}
       {showFoodWheel && currentUser && (
         <div style={{ position:"fixed", inset:0, zIndex:9999, overflowY:"auto" }}>
           <FoodWheel onBack={() => setShowFoodWheel(false)} currentUser={currentUser} onCoinsChange={farmCoinsChange} />
