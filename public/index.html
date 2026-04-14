@@ -47,6 +47,10 @@
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
+    @keyframes slideDownFade {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0)     scale(1);    }
+    }
     /* Backdrop-filter fallback for unsupported browsers */
     @supports not (backdrop-filter: blur(1px)) {
       .blur-fallback {

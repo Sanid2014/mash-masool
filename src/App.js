@@ -1700,6 +1700,18 @@ export default function App() {
   const [chatInput, setChatInput] = useState("");
   const [lastReadTimes, setLastReadTimes] = useState(() => { try { return JSON.parse(localStorage.getItem("chat-last-read") || "{}"); } catch { return {}; } });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // ── Toast notifications ──
+  const [toasts, setToasts] = useState([]);
+  const [lastSeenHomeTs, setLastSeenHomeTs] = useState(() => Number(localStorage.getItem("last-seen-home") || 0));
+  const [lastSeenNaifTs, setLastSeenNaifTs] = useState(() => Number(localStorage.getItem("last-seen-naif") || 0));
+  const prevStoriesRef = useRef([]);
+  const prevNaifRef = useRef([]);
+  const prevChatRef = useRef({});
+  const addToast = (toast) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev.slice(-2), { id, ...toast }]); // max 3 at once
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+  };
   const membersNavRef = useRef(null);
   // Presence
   const [presenceData, setPresenceData] = useState({});
@@ -1772,6 +1784,64 @@ export default function App() {
       return updated;
     });
   };
+
+  // ── Toast: new stories ──
+  useEffect(() => {
+    const myId = currentUser?.id ?? (isAdmin ? "admin" : null);
+    const prevIds = new Set(prevStoriesRef.current.map(s => s.id));
+    if (prevIds.size > 0) { // don't fire on first load
+      const newOnes = stories.filter(s => !prevIds.has(s.id) && String(s.userId) !== String(myId));
+      newOnes.forEach(s => addToast({ type: "story", avatar: s.userAvatar || null, name: s.userName || "?", text: lang === "ar" ? "أضاف ستوري جديد" : "Added a new story" }));
+    }
+    prevStoriesRef.current = stories;
+  }, [stories]); // eslint-disable-line
+
+  // ── Toast: new naif diary ──
+  useEffect(() => {
+    const prevIds = new Set(prevNaifRef.current.map(a => a.id));
+    if (prevIds.size > 0) {
+      const newOnes = naifDiary.filter(a => !prevIds.has(a.id));
+      if (newOnes.length > 0) {
+        setLastSeenNaifTs(0); // mark as unseen so badge shows
+        localStorage.setItem("last-seen-naif", "0");
+        newOnes.forEach(a => addToast({ type: "naif", avatar: null, name: "مذكرات نفنف", text: a.title || "مقال جديد" }));
+      }
+    }
+    prevNaifRef.current = naifDiary;
+  }, [naifDiary]); // eslint-disable-line
+
+  // ── Toast: new announcements (red dot on home) ──
+  useEffect(() => {
+    if (announcements.length > 0) {
+      const newest = Math.max(...announcements.map(a => a.time || a.ts || 0));
+      if (newest > lastSeenHomeTs) {
+        // badge will show; toast only if this isn't first load
+        if (lastSeenHomeTs > 0) {
+          addToast({ type: "home", avatar: null, name: lang === "ar" ? "إعلان جديد" : "New Announcement", text: announcements[0]?.text || "" });
+        }
+      }
+    }
+  }, [announcements]); // eslint-disable-line
+
+  // ── Toast: new chat messages ──
+  useEffect(() => {
+    const myId = currentUser?.id ?? (isAdmin ? "admin" : null);
+    if (!myId) return;
+    Object.entries(chatMessages).forEach(([key, msgs]) => {
+      const prev = prevChatRef.current[key] || [];
+      if (prev.length > 0 && msgs.length > prev.length) {
+        const newMsgs = msgs.slice(prev.length);
+        newMsgs.forEach(m => {
+          if (String(m.from) !== String(myId) && openChat?.chatKey !== key) {
+            // find sender
+            const sender = users.find(u => String(u.id) === String(m.from));
+            addToast({ type: "message", avatar: sender?.avatar || m.avatar || null, name: m.name || sender?.name || "?", text: m.text || "..." });
+          }
+        });
+      }
+    });
+    prevChatRef.current = chatMessages;
+  }, [chatMessages]); // eslint-disable-line
 
   // helper: تحديث diary مع حفظ فوري
   const updateDiary = (updaterFn) => {
@@ -3211,9 +3281,15 @@ export default function App() {
 
         {/* ── مذكرات نفنف ── */}
         <section style={{ ...fade(0.45), marginBottom: 48 }}>
-          <div style={S.secTitle}><span style={{ fontSize: 22 }}>🌙</span><span>مذكرات نفنف</span></div>
+          <div style={{ ...S.secTitle, position: "relative", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 22 }}>🌙</span>
+            <span>مذكرات نفنف</span>
+            {naifDiary.length > 0 && Math.max(...naifDiary.map(a => a.ts || a.time || 0)) > lastSeenNaifTs && (
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E53935", boxShadow: "0 0 6px rgba(229,57,53,0.8)", display: "inline-block", flexShrink: 0 }} />
+            )}
+          </div>
           <div
-            onClick={() => setShowNaifDiary(true)}
+            onClick={() => { setShowNaifDiary(true); const now = Date.now(); setLastSeenNaifTs(now); localStorage.setItem("last-seen-naif", String(now)); }}
             style={{
               cursor: "pointer",
               borderRadius: 20,
@@ -4595,6 +4671,37 @@ export default function App() {
       )}
 
       {/* ══════════════ LOGOUT NOTICE TOAST ══════════════ */}
+      {/* ══ Toast Notifications ══ */}
+      <div style={{ position: "fixed", top: "env(safe-area-inset-top, 0px)", left: 0, right: 0, zIndex: 99999, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "12px 16px", pointerEvents: "none" }}>
+        {toasts.map(toast => (
+          <div key={toast.id} onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} style={{
+            pointerEvents: "auto", display: "flex", alignItems: "center", gap: 12,
+            background: "rgba(18,14,36,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18,
+            padding: "10px 16px 10px 12px", maxWidth: 340, width: "100%",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)", cursor: "pointer",
+            animation: "slideDownFade 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+            direction: "rtl", fontFamily: "'Cairo',sans-serif",
+          }}>
+            {/* Avatar */}
+            <div style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0, overflow: "hidden", border: "2px solid rgba(124,58,237,0.6)", background: toast.type === "naif" ? "linear-gradient(135deg,#2d0a5c,#1a2a6c)" : "linear-gradient(135deg,#7C3AED,#A855F7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: toast.avatar ? 0 : 20 }}>
+              {toast.avatar
+                ? <img src={toast.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : toast.type === "naif" ? "🌙" : toast.type === "home" ? "📣" : "💬"}
+            </div>
+            {/* Text */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{toast.name}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{toast.text}</div>
+            </div>
+            {/* Type pill */}
+            <div style={{ fontSize: 10, fontWeight: 900, padding: "3px 8px", borderRadius: 99, background: toast.type === "message" ? "rgba(236,72,153,0.2)" : toast.type === "naif" ? "rgba(124,58,237,0.2)" : toast.type === "story" ? "rgba(249,115,22,0.2)" : "rgba(14,165,233,0.2)", color: toast.type === "message" ? "#F472B6" : toast.type === "naif" ? "#A78BFA" : toast.type === "story" ? "#FB923C" : "#38BDF8", flexShrink: 0 }}>
+              {toast.type === "message" ? "رسالة" : toast.type === "naif" ? "مذكرات" : toast.type === "story" ? "ستوري" : "إعلان"}
+            </div>
+          </div>
+        ))}
+      </div>
+
       {logoutNotice && (
         <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 600, background: "#e74c3c", color: "#fff", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 700, fontFamily: "'Cairo',sans-serif", boxShadow: "0 4px 24px rgba(0,0,0,0.4)", animation: "fadeIn 0.2s ease", whiteSpace: "nowrap", direction: dir }}>
           ⏱ {t("autoLoggedOut")}
@@ -5114,8 +5221,8 @@ export default function App() {
             labelAr: "الرئيسية",
             labelEn: "Home",
             active: !showVoting && !showMsgList && !showMobileProfile && !showGamesLobby && !showFarmGame && !showMarioGame && !showFoodWheel,
-            action: () => { setOpenChat(null); setShowVoting(false); setShowMsgList(false); setShowProfile(false); setShowAdmin(false); setShowMobileProfile(false); setShowGamesLobby(false); setShowFarmGame(false); setShowMarioGame(false); setShowFoodWheel(false); window.scrollTo({ top: 0, behavior: "smooth" }); },
-            badge: 0,
+            action: () => { setOpenChat(null); setShowVoting(false); setShowMsgList(false); setShowProfile(false); setShowAdmin(false); setShowMobileProfile(false); setShowGamesLobby(false); setShowFarmGame(false); setShowMarioGame(false); setShowFoodWheel(false); window.scrollTo({ top: 0, behavior: "smooth" }); const now = Date.now(); setLastSeenHomeTs(now); localStorage.setItem("last-seen-home", String(now)); },
+            badge: announcements.length > 0 && Math.max(...announcements.map(a => a.time || a.ts || 0)) > lastSeenHomeTs ? 1 : 0,
           },
           {
             key: "voting",
